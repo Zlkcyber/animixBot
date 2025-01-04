@@ -99,53 +99,103 @@ const getPower = async (headers, proxy) => {
 
     return power;
 }
+
 const mergePetIds = async (headers, proxy) => {
     const petIds = await fetchPetDnaList(headers, proxy);
     if (!petIds.allPetIds || petIds.allPetIds.length < 1) {
+        log.warn("You don't have any pets to indehoy 💔");
         return;
-    };
+    }
+
     log.info("Number Available Female Pet:", petIds?.momPetIds?.length || 0);
     log.info("Number Available Male Pet:", petIds?.dadPetIds?.length || 0);
 
     if (petIds.momPetIds.length < 1) {
-        log.warn("you don't have any female pets to indehoy 😢💔");
+        log.warn("You don't have any female pets to indehoy 😢💔");
         return;
     }
 
     const moms = [...petIds.momPetIds];
     const dads = [...petIds.dadPetIds];
+    const mythDadIds = [125];
+    const mythMomIds = [124, 121, 122];
 
-    while (moms.length > 0) {
+    const mythMoms = moms.filter(mom => mythMomIds.includes(mom));
+    const mythDads = dads.filter(dad => mythDadIds.includes(dad));
+
+    if (mythDads.length > 0 && mythMoms.length > 0) {
+        for (let i = 0; i < mythDads.length; i++) {
+            const dad = mythDads[i];
+            const momIndex = Math.floor(Math.random() * mythMoms.length);
+            const mom = mythMoms[momIndex];
+            if (mom === undefined) continue;
+
+            log.info(`Merging ⭐10 pets from ${mom} and ${dad} 💕`);
+            await indehoy(headers, proxy, mom, dad);
+
+            mythMoms.splice(i, 1);
+            mythDads.splice(i, 1);
+            await delay(1);
+        }
+    } else {
+        log.info("oho so sad, no mythic pets to merge 😢💔");
+    }
+
+    while (moms.length > 1) {
         const momIndex = Math.floor(Math.random() * moms.length);
+        const nextMomIndex = Math.floor(Math.random() * moms.length);
         const dadIndex = Math.floor(Math.random() * dads.length);
 
         const mom = moms[momIndex];
+        const nextMom = moms[nextMomIndex];
         const dad = dads[dadIndex];
 
+        if (momIndex === nextMomIndex) continue;
+
+        if (dad === 125) {
+            dads.splice(dadIndex, 1);
+            continue;
+        } else {
+            if ([124, 121, 122].includes(mom)) {
+                log.info(`Skipping merge Dragon, Phoenix, or Unicorn.`);
+                moms.splice(momIndex, 1);
+                continue;
+            } else if ([124, 121, 122].includes(nextMom)) {
+                log.info(`Skipping merge Dragon, Phoenix, or Unicorn.`);
+                moms.splice(nextMomIndex, 1);
+                continue;
+            }
+        }
+
         if (mom !== undefined && dad !== undefined) {
-            log.info(`Indehoy pets ${mom} and ${dad}💕`);
+            log.info(`Indehoy pets ${mom} and ${dad} 💕`);
             await indehoy(headers, proxy, mom, dad);
 
             moms.splice(momIndex, 1);
             dads.splice(dadIndex, 1);
             await delay(1);
-        } else if (moms.length > 1 && momIndex + 1 < moms.length) {
-            const nextMom = moms[momIndex + 1];
-
+        } else if (mom !== undefined && nextMom !== undefined) {
             if (mom !== nextMom) {
-                log.info(`Indehoy pets ${mom} and ${nextMom}💕`);
+                log.info(`Indehoy pets ${mom} and ${nextMom} 💕`);
                 await indehoy(headers, proxy, mom, nextMom);
 
-                moms.splice(momIndex, 1);
-                moms.splice(momIndex, 1);
+                moms.splice(Math.max(momIndex, nextMomIndex), 1);
+                moms.splice(Math.min(momIndex, nextMomIndex), 1);
                 await delay(1);
-            };
+            } else {
+                moms.splice(nextMomIndex, 1);
+            }
         } else {
-            log.warn("you don't have any couple to indehoy 😢💔.");
+            log.warn("No valid pairs available to indehoy 💔");
             break;
         }
     }
+
+    if (moms.length < 2) {
+        log.warn("You don't have any more pets to indehoy 💔");
+    }
 };
+
 
 const doMissions = async (headers, proxy) => {
     const petData = await fetchPetList(headers, proxy);
@@ -158,7 +208,11 @@ const doMissions = async (headers, proxy) => {
     const firstMatchingMission = checkFirstMatchingMission(missionLists, availablePetIds, usedPetIds, petIdsByStarAndClass);
     if (firstMatchingMission) {
         log.info("Entering mission with available pets:", JSON.stringify(firstMatchingMission));
-        await joinMission(headers, proxy, firstMatchingMission);
+        const isSuccess = await joinMission(headers, proxy, firstMatchingMission);
+        if (!isSuccess) {
+            log.error("Failed to join mission:", JSON.stringify(firstMatchingMission));
+            return;
+        };
         await doMissions(headers, proxy);
     } else {
         log.warn("Cannot Join another missions with current available pets.");
@@ -260,7 +314,7 @@ async function startMission() {
 
         let power = await getPower(headers, proxy);
         while (power >= 1) {
-            log.info("Power is enough to gatcha new pet. lets go!");
+            log.info("God Power is enough to gatcha new pet. lets go!");
             power = await getNewPet(headers, proxy);
             await delay(1);
         };
