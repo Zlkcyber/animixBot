@@ -239,4 +239,3 @@ export async function getNewPet(headers, proxy) {
     log.info("Gacha New Pet Success!", JSON.stringify(petInfo));
     return godPower;
 }
-
