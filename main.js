@@ -208,11 +208,7 @@ const doMissions = async (headers, proxy) => {
     const firstMatchingMission = checkFirstMatchingMission(missionLists, availablePetIds, usedPetIds, petIdsByStarAndClass);
     if (firstMatchingMission) {
         log.info("Entering mission with available pets:", JSON.stringify(firstMatchingMission));
-        const isSuccess = await joinMission(headers, proxy, firstMatchingMission);
-        if (!isSuccess) {
-            log.error("Failed to join mission:", JSON.stringify(firstMatchingMission));
-            return;
-        };
+        await joinMission(headers, proxy, firstMatchingMission);
         await doMissions(headers, proxy);
     } else {
         log.warn("Cannot Join another missions with current available pets.");

@@ -187,8 +187,6 @@ export async function joinMission(headers, proxy, payloadMission) {
     }, 3, proxy);
     if (data?.result?.createdAt) {
         log.info("Joined mission successfully at:", data.result.createdAt);
-    } else {
-        return false;
     }
 }
 
